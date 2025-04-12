@@ -10,13 +10,13 @@ The [3D Printed Educational Devices Kit](https://www.makersmakingchange.com/s/pr
 
 | Name                 | Repository Link |
 |----------------------|-----------------|
-| Bottle Opener                | https://makersmakingchange.com/s/product/bottle-opener/01tJR00000068z0YAA |  
-| Key Turner              |  https://www.makersmakingchange.com/s/product/key-turner/01tJR00000068z6YAA  
-| Pen Ball             | https://www.makersmakingchange.com/s/product/pen-ball/01tJR00000068zzYAA
-| Palm Pen Holder     | https://www.makersmakingchange.com/s/product/palm-pen-holder/01tJR00000068z8YAA
-| Ready Bar Flat     | https://makersmakingchange.com/s/product/reading-bar-flat/01tJR00000068z3YAA
-| Dice Spinner     | https://makersmakingchange.com/s/product/dice-spinner/01tJR000000693qYAA
-| MMC60 Switch     | https://makersmakingchange.com/s/product/mmc60-switch/01tJR000000693rYAA
+| Bottle Opener        | https://makersmakingchange.com/s/product/bottle-opener/01tJR00000068z0YAA |  
+| Key Turner           |  https://www.makersmakingchange.com/s/product/key-turner/01tJR00000068z6YAA  |
+| Pen Ball             | https://www.makersmakingchange.com/s/product/pen-ball/01tJR00000068zzYAA |
+| Palm Pen Holder      | https://www.makersmakingchange.com/s/product/palm-pen-holder/01tJR00000068z8YAA |
+| Ready Bar Flat       | https://makersmakingchange.com/s/product/reading-bar-flat/01tJR00000068z3YAA |
+| Dice Spinner         | https://makersmakingchange.com/s/product/dice-spinner/01tJR000000693qYAA |
+| MMC60 Switch         | https://makersmakingchange.com/s/product/mmc60-switch/01tJR000000693rYAA |
 
 ### Bottle Opener
 This device provides a large gripping surface and clamps onto the caps of standard water bottles with a small squeeze, allowing users to remove or screw on water bottle caps.
@@ -40,8 +40,9 @@ The switch activated dice spinner utilizes a hobby motor, battery holder, and ja
 The switch is activated by applying pressure on the top surface. This switch can be connected to any standard AT interface, and can also be used with the Xbox Adaptive Controller. The kit contains different colours and textures of interchangeable button tops.
 
 
----
+----
 
+<!-- ABOUT MMC START -->
 ## About Makers Making Change
 [<img src="https://raw.githubusercontent.com/makersmakingchange/makersmakingchange/main/img/mmc_logo.svg" width="500" alt="Makers Making Change Logo">](https://www.makersmakingchange.com/)
 
@@ -60,3 +61,4 @@ Makers Making Change leverages the capacity of community based Makers, Disabilit
 
 ### Contact Us
 For technical questions, to get involved, or to share your experience we encourage you to [visit our website](https://www.makersmakingchange.com/) or [contact us](https://www.makersmakingchange.com/s/contact).
+<!-- ABOUT MMC END -->
