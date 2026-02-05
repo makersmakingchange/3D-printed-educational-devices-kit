@@ -1,0 +1,182 @@
+# This GitHub Action copies repos based on a csv file that indicates which repos to copy
+
+# To run, this file requires a separate file, Included_Devices.csv to be in the same folder as this file.
+
+name: Copy_Device_Repositories
+
+# Choose how to trigger the workflow
+on:
+    # Trigger the workflow manually
+    workflow_dispatch:
+    # Trigger the workflow on a schedule. In this case, once at midnight, and once at noon.
+    #schedule:
+    #    - cron: '0 0,12 * * *'
+
+jobs:
+    # Read the file contents from the CSV in the repo
+    file_contents:
+        runs-on: ubuntu-latest
+        # Delcare the outputs from this job and a relative path to them (which step, what the output is called)
+        outputs:
+              device_repos: ${{ steps.read_file.outputs.device_repos }}
+              kit_repo: ${{ steps.kit_repo_step.outputs.kit_repo }}
+        steps:
+        # Checkout the kit repo
+        - name: Checkout the kit repo
+          uses: actions/checkout@v6
+          with:
+            # Create a shorter path name to refer to this repository
+            path: kit_repo
+        
+        # This is a debugging step for the most part. The only required line to be run is the first echo line that declares a GitHub Output
+        - name: Double check Kit Repo Path
+          # Add step ID so this step can be referenced later
+          id: kit_repo_step
+          # Writing the kit repo as an environmental variable to try passing between jobs
+          env:
+            KIT_REPO_PATH: ${{ github.repository }}
+          run: |
+              # Assign the current repository to the output "kit_repo" and make it a GitHub output to be read in other steps/jobs.
+              echo "kit_repo=${{ github.repository }}" >> $GITHUB_OUTPUT
+
+              # The following three steps are for debugging and trying different ways to call that repo name.
+              echo "Read repo directly: ${{ github.repository }}"
+              echo "Read repo as environmental variable: $KIT_REPO_PATH"
+              echo "Read repo as environmental variable with brackets: ${{ env.KIT_REPO_PATH }}"
+          
+        # Install python dependencies for the next step
+        - name: Install Python dependencies
+          run: python -m pip install --upgrade pip pandas
+        
+        # Read the file that includes all the repos
+        - name: Read repo names
+          # Add a step ID to reference later
+          id: read_file
+          
+          # Use python to read the CSV file and create a dynamic matrix with all the devices to add to the kit repo
+          shell: python
+          run: |
+              # Import the requesite python libraries
+              import pandas
+              import json
+              import os
+
+              # Read the file
+              included_devices = pandas.read_csv('kit_repo/.github/workflows/Included_Devices.csv', skipinitialspace=True, usecols=["RepoName"])
+
+              # Print out what has been read for debugging
+              print(included_devices.RepoName)
+
+              # Pandas uses a different data type that doesn't work with the next function, so change it from a series to a list data type
+              device_list = included_devices.RepoName.tolist()
+
+              # Print the new list for debugginb
+              print(device_list)
+
+              # Convert the list to JSON format for the matrix in the next step
+              devices = json.dumps(device_list)
+
+              # Print out the devices to include for debugging
+              print(devices)
+
+              # Pass the python variable "Devices" as a GitHub Output
+              with open(os.environ['GITHUB_OUTPUT'], 'a') as fh:
+                  print(f'device_repos={devices}', file=fh)
+
+        # Debugging step to make sure the outputs are what would be expected
+        - name: Check output
+          id: check_repos
+          run: |
+              # Print out for debugging
+              echo "${{ fromJson(steps.read_file.outputs.device_repos) }}"
+              # echo "${{ steps.read_file.outputs.device_repos }}"
+              echo "Kit Repo: ${{ steps.kit_repo_step.outputs.kit_repo }}"
+
+    # This job runs for every device in the kit, based on the output of the first job
+    copy_repositories:
+        runs-on: ubuntu-latest
+        needs: file_contents
+        # Make a matrix of repo names to run the next section of code with a matrix strategy
+        strategy:
+          # Run only one of these matrix jobs at a time to avoid conflicts with pushes and pulls to the kit repo
+          max-parallel: 1
+          # Create the matrix with the names of each device included in the kit
+          matrix:
+            devices: ${{ fromJson(needs.file_contents.outputs.device_repos) }}
+
+        steps:
+        
+        # Added for debugging and to not have this job empty.
+        - name: Read through the files
+          run: |
+              echo "Read device name: ${{matrix.devices}}"
+              echo "Read device list: ${{needs.file_contents.outputs.device_repos}}"
+              echo "Try to read path from environmental variable: ${{ env.KIT_REPO_PATH }}"
+              echo "Try to read path from output ${{ needs.file_contents.outputs.kit_repo}}"
+        
+        # Checkout the kit repo again because checkouts don't pass between jobs
+        - name: Checkout the kit repo
+          uses: actions/checkout@v6
+          with:
+            path: kit_repo
+
+        # Pull the current repo to make sure there are no merge conflicts later
+        - name: Pull changes to local
+          run: |
+              cd kit_repo
+              git pull
+              
+        # Checkout the device repo
+        - name: Checkout device repo
+          uses: actions/checkout@v6
+          with:
+              # Checkout the individual device repo and add the relative path to direct to the repo
+              repository: makersmakingchange/${{matrix.devices}}
+              path: ./${{matrix.devices}}
+              # Fetch-depth: 0 so the checkout pulls all branches of the repo, just in case
+              fetch-depth: 0
+        
+        # Check path variables for debugging
+        - name: Check path variables
+          run: |
+              echo "Github Workspace: $GITHUB_WORKSPACE"
+        
+        # Copy the files with Git commands
+        - name: Copy maker files
+          run: |
+              # Create a folder for the device in the kit repo and copy the Build_Files folder and its subfolders/files
+              mkdir -p kit_repo/${{matrix.devices}} && cp -R ./${{matrix.devices}}/Build_Files kit_repo/${{matrix.devices}}
+
+              # Create a folder for the device documentation in the kit repo, and copy all PDFs to it
+              mkdir -p kit_repo/${{matrix.devices}}/Documentation && cp -R ./${{matrix.devices}}/Documentation/*.pdf kit_repo/${{matrix.devices}}/Documentation
+
+              # Copy the CSV version of the BOM to the kit repo
+              cp -R ./${{matrix.devices}}/Documentation/*BOM.csv kit_repo/${{matrix.devices}}/Documentation
+              
+
+        # Commit and push the files to the new folder
+        - name: Commit and push files to kit repo
+          run: |
+              # Print the current directory for debugging
+              echo "$PWD"
+
+              # Change the current directory to the kit repo
+              cd kit_repo
+
+              # Add configuration variables the Action will be sad about if we don't set
+              git config user.name "GitHub Action"
+              git config user.email "github_action@github.com"
+
+              # Add the changes to the index for committing and pushing to the repo, excluding the Design Rationale
+              # git add .
+              git add --all -- :^${{matrix.devices}}/Documentation/*Design_Rationale.pdf
+
+              # Commit the changes, with allow-empty so no errors occur if a device hasn't been updated when this Action is triggered
+              git commit --allow-empty -m "Automatic update of files from devices listed in the kits"
+              git push 
+              
+
+
+        
+                
+            
